@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bibliotecas de Acessibilidade</title>
+<meta name="description" content="Apresentação interativa sobre 6 bibliotecas JavaScript que tornam a web inclusiva: Darkmode.js, Web Speech API, Alertify.js, RecordRTC, Accessibility Widget e VLibras." />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css" />
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PALETA — roxo VLibras + verde de contraste
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --radius: 12px;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  --bg: #0d0a17;
+  --bg-elev: #15101f;
+  --card: #1a1428;
+  --border: rgba(255, 255, 255, 0.10);
+  --text: #f5f1e8;
+  --text-soft: rgba(245, 241, 232, 0.72);
+  --text-mute: rgba(245, 241, 232, 0.50);
+  --primary: #a78bfa;
+  --primary-soft: rgba(167, 139, 250, 0.15);
+  --primary-border: rgba(167, 139, 250, 0.35);
+  --accent: #4ade80;
+  --accent-soft: rgba(74, 222, 128, 0.12);
+  --code-bg: #110b1d;
+  --code-text: #e8defc;
+}
+
+[data-theme="light"] {
+  --bg: #faf7f0;
+  --bg-elev: #ffffff;
+  --card: #ffffff;
+  --border: rgba(26, 14, 46, 0.12);
+  --text: #1a0e2e;
+  --text-soft: rgba(26, 14, 46, 0.75);
+  --text-mute: rgba(26, 14, 46, 0.55);
+  --primary: #6d28d9;
+  --primary-soft: rgba(109, 40, 217, 0.10);
+  --primary-border: rgba(109, 40, 217, 0.30);
+  --accent: #059669;
+  --accent-soft: rgba(5, 150, 105, 0.10);
+  --code-bg: #1a1428;
+  --code-text: #e8defc;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESET + BASE
+   ═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; height: auto; display: block; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TOP BAR
+   ═══════════════════════════════════════════════════════════════ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  height: 56px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+}
+.brand {
+  display: flex; flex-direction: column; line-height: 1.1;
+}
+.brand strong { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.brand span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mute); }
+.spacer { flex: 1; }
+
+.progress-wrap {
+  display: none; align-items: center; gap: 8px;
+}
+@media (min-width: 768px) {
+  .progress-wrap { display: flex; }
+}
+.progress-text {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-mute); font-variant-numeric: tabular-nums;
+}
+.progress-track {
+  width: 140px; height: 6px; border-radius: 999px;
+  background: var(--border); overflow: hidden;
+}
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.3s ease;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-soft);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+.btn:hover {
+  background: var(--card); color: var(--text);
+  border-color: var(--border);
+}
+.btn.active {
+  background: var(--primary); color: #0d0a17;
+  border-color: var(--primary);
+}
+[data-theme="light"] .btn.active { color: #fff; }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0;
+  justify-content: center;
+}
+kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: rgba(0,0,0,0.18);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+[data-theme="light"] .btn.active kbd { background: rgba(255,255,255,0.25); }
+
+/* Thin progress line below topbar */
+.thin-progress {
+  position: fixed; top: 56px; left: 0; right: 0;
+  height: 2px; background: transparent; z-index: 30;
+}
+.thin-progress > div {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DECK
+   ═══════════════════════════════════════════════════════════════ */
+.deck {
+  height: 100vh; overflow-y: auto; overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 56px;
+}
+.deck::-webkit-scrollbar { width: 8px; }
+.deck::-webkit-scrollbar-track { background: transparent; }
+.deck::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.slide {
+  min-height: 100vh;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 80px 24px 60px;
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .slide { padding: 100px 64px 80px; }
+}
+
+.slide-num {
+  position: absolute; top: 72px; right: 24px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-mute); opacity: 0.6;
+}
+@media (min-width: 768px) {
+  .slide-num { top: 88px; right: 64px; }
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.slide-title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 800; line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.slide-subtitle {
+  font-size: clamp(15px, 2vw, 19px);
+  color: var(--text-soft);
+  margin-bottom: 32px;
+  max-width: 720px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COVER
+   ═══════════════════════════════════════════════════════════════ */
+.cover {
+  text-align: center;
+  align-items: center;
+}
+.cover-icon {
+  width: 112px; height: 112px;
+  border-radius: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  margin: 0 auto 32px;
+  box-shadow: 0 20px 50px -10px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+.cover-icon .material-icons {
+  font-size: 56px;
+  color: var(--bg);
+}
+.cover-pill {
+  display: inline-block;
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+.cover h1 {
+  font-size: clamp(36px, 8vw, 76px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cover .subtitle {
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--text-soft);
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+.cover-stats {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 24px; max-width: 480px; margin: 0 auto 32px;
+}
+@media (min-width: 480px) {
+  .cover-stats { grid-template-columns: repeat(4, 1fr); }
+}
+.cover-stats > div { text-align: center; }
+.cover-stats .num {
+  font-size: 28px; font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.cover-stats .lbl {
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-mute);
+  margin-top: 4px;
+}
+.cover-hint {
+  font-size: 12px; color: var(--text-mute);
+  display: flex; align-items: center; gap: 6px;
+  justify-content: center; flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTENT BLOCKS
+   ═══════════════════════════════════════════════════════════════ */
+.card-grid {
+  display: grid; gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+.card.hoverable:hover {
+  border-color: var(--primary-border);
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--primary) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+.card-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 700;
+  margin-bottom: 12px;
+}
+.card h3 {
+  font-size: 17px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px;
+}
+.card p {
+  font-size: 13px; line-height: 1.6;
+  color: var(--text-soft);
+}
+
+/* Feature card highlighted */
+.card.feature {
+  background: linear-gradient(135deg, var(--primary-soft), transparent);
+  border-color: var(--primary-border);
+}
+.card.feature .card-num {
+  background: var(--primary); color: var(--bg);
+}
+[data-theme="light"] .card.feature .card-num { color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════
+   LIBRARY SLIDE
+   ═══════════════════════════════════════════════════════════════ */
+.lib-header {
+  display: flex; align-items: flex-start; gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.lib-icon {
+  width: 64px; height: 64px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px -6px rgba(0,0,0,0.4);
+}
+.lib-icon .material-icons { font-size: 32px; }
+.lib-info { flex: 1; min-width: 200px; }
+.lib-info h2 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800; line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.lib-info .lib-tagline {
+  font-size: 15px; color: var(--text-soft);
+}
+.lib-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--card);
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+.lib-link:hover {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.lib-desc {
+  font-size: 16px; line-height: 1.7;
+  color: var(--text-soft);
+  margin-bottom: 20px;
+  max-width: 900px;
+}
+
+.badges {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 28px;
+}
+.badge {
+  font-size: 12px; font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.lib-grid {
+  display: grid; gap: 24px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+  .lib-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.code-section h4 {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-mute);
+  margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CODE BLOCK
+   ═══════════════════════════════════════════════════════════════ */
+.code-caption {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-mute);
+  margin-bottom: 8px;
+}
+pre.code {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-x: auto;
+  white-space: pre;
+}
+pre.code .key { color: #c084fc; font-weight: 500; }
+pre.code .str { color: #86efac; }
+pre.code .com { color: #7c7185; font-style: italic; }
+pre.code .fn  { color: #fcd34d; }
+pre.code .tag { color: #93c5fd; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID CARDS (overview)
+   ═══════════════════════════════════════════════════════════════ */
+.grid-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.grid-card:hover {
+  border-color: var(--primary-border);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px -10px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.grid-card .gc-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  margin-bottom: 14px;
+}
+.grid-card .gc-icon .material-icons { font-size: 24px; }
+.grid-card h3 {
+  font-size: 17px; font-weight: 700;
+  color: var(--text); margin-bottom: 4px;
+}
+.grid-card .gc-tag {
+  font-size: 12px; color: var(--text-soft);
+  margin-bottom: 12px;
+}
+.grid-card .gc-desc {
+  font-size: 13px; line-height: 1.55;
+  color: var(--text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.grid-card .gc-num {
+  position: absolute; top: 16px; right: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-mute);
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CLOSING
+   ═══════════════════════════════════════════════════════════════ */
+.closing { text-align: center; align-items: center; }
+.closing-icon {
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-soft);
+  border: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  margin: 0 auto 24px;
+}
+.closing-icon .material-icons { font-size: 40px; color: var(--accent); }
+.closing h2 {
+  font-size: clamp(40px, 8vw, 64px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.closing .closing-sub {
+  font-size: clamp(18px, 3vw, 24px);
+  color: var(--primary);
+  margin-bottom: 32px;
+}
+.closing-body { max-width: 680px; margin: 0 auto; }
+.closing-body p {
+  font-size: 16px; line-height: 1.7;
+  color: var(--text-soft);
+  margin-bottom: 16px;
+}
+.closing-dots {
+  margin-top: 40px;
+  display: flex; gap: 12px;
+  justify-content: center; align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px; color: var(--text-mute);
+}
+.closing-dots > span {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.closing-dots i {
+  width: 8px; height: 8px;
+  border-radius: 50%; background: var(--primary);
+}
+.closing-dots .dot-accent i { background: var(--accent); }
+.closing-dots .dot-mute i { background: var(--text-mute); }
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV BUTTONS
+   ═══════════════════════════════════════════════════════════════ */
+.nav-btns {
+  position: fixed; bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 30;
+}
+.nav-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+.nav-btn:hover {
+  transform: scale(1.05);
+  border-color: var(--primary-border);
+}
+.nav-btn.primary {
+  background: var(--primary);
+  color: var(--bg);
+  border-color: var(--primary);
+}
+[data-theme="light"] .nav-btn.primary { color: #fff; }
+.nav-btn:disabled {
+  opacity: 0.3; cursor: not-allowed;
+}
+.nav-btn .material-icons { font-size: 24px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTES PANEL
+   ═══════════════════════════════════════════════════════════════ */
+.notes-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 2px solid var(--primary-border);
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+  max-height: 55vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.notes-panel.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.notes-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+.notes-header {
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.notes-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+}
+.notes-icon .material-icons { font-size: 18px; }
+.notes-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+}
+.notes-sub {
+  font-size: 11px; color: var(--text-mute);
+}
+.notes-close {
+  margin-left: auto;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-mute);
+  transition: all 0.2s ease;
+}
+.notes-close:hover {
+  background: var(--card); color: var(--text);
+}
+.notes-body {
+  font-size: 15px; line-height: 1.65;
+  color: var(--text-soft);
+  white-space: pre-line;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INDEX DRAWER
+   ═══════════════════════════════════════════════════════════════ */
+.drawer-backdrop {
+  position: fixed; inset: 0; z-index: 49;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  width: 320px; max-width: 85vw;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 30px rgba(0,0,0,0.3);
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-head {
+  position: sticky; top: 0;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.drawer-head h2 {
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text);
+}
+.drawer-list { list-style: none; padding: 8px; }
+.drawer-list li button {
+  display: flex; align-items: flex-start; gap: 12px;
+  width: 100%; padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px; text-align: left;
+  color: var(--text-soft);
+  transition: all 0.15s ease;
+}
+.drawer-list li button:hover {
+  background: var(--bg-elev); color: var(--text);
+}
+.drawer-list li button.active {
+  background: var(--primary-soft); color: var(--text);
+}
+.drawer-list li .num {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+.drawer-list li.active .num { color: var(--primary); }
+
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS / ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════ */
+*:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* Decorative backgrounds */
+.dot-bg {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--primary) 14%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DEMO (implementações ao vivo das bibliotecas)
+   ═══════════════════════════════════════════════════════════════ */
+.demo-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-top: 8px;
+}
+.demo-box h4 {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-mute);
+  margin-bottom: 16px;
+}
+.demo-actions {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 16px;
+}
+.demo-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 42px; padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px; font-weight: 600;
+  background: var(--primary);
+  color: #0d0a17;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+[data-theme="light"] .demo-btn { color: #fff; }
+.demo-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 50%, transparent); }
+.demo-btn.secondary {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.demo-btn.secondary:hover { border-color: var(--primary-border); background: var(--primary-soft); color: var(--primary); }
+.demo-btn.danger { background: #f43f5e; color: #fff; }
+.demo-btn.success { background: #10b981; color: #fff; }
+.demo-btn.warn { background: #f59e0b; color: #0d0a17; }
+.demo-sample {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  transition: all 0.3s ease;
+}
+.demo-sample.high-contrast {
+  background: #000; color: #fff; border-color: #fff;
+}
+.demo-sample.grayscale { filter: grayscale(1); }
+.demo-sample.underline-links a { text-decoration: underline !important; text-underline-offset: 3px; }
+.demo-status {
+  font-size: 13px; color: var(--text-mute);
+  margin-top: 12px;
+  min-height: 1.4em;
+}
+.demo-audio {
+  width: 100%; margin-top: 12px;
+  border-radius: 8px;
+}
+.demo-vlibras-note {
+  font-size: 13px; color: var(--text-soft);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.a11y-panel-demo {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px; margin-top: 12px;
+}
+.a11y-panel-demo button {
+  padding: 12px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  font-size: 13px; font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  transition: all 0.15s ease;
+}
+.a11y-panel-demo button:hover,
+.a11y-panel-demo button.active {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+#darkmode-demo-area {
+  transition: filter 0.4s ease, background 0.4s ease, color 0.4s ease;
+}
+#darkmode-demo-area.is-dark {
+  background: #0d0a17;
+  color: #f5f1e8;
+  filter: none;
+}
+#darkmode-demo-area.is-dark .demo-sample {
+  background: #1a1428;
+  color: #f5f1e8;
+  border-color: rgba(255,255,255,0.12);
+}
+
+
+/* Alertify acima da topbar / nav */
+.alertify-notifier { z-index: 99999 !important; }
+.alertify { z-index: 99999 !important; }
+.alertify-logs { z-index: 99999 !important; }
+
+</style>
+</head>
+
+<body>
+
+<!-- ═══ TOP BAR ═══ -->
+<header class="topbar" role="banner">
+  <button class="btn btn-icon" id="open-index" aria-label="Abrir índice de slides" title="Índice (M)">
+    <i class="material-icons">menu</i>
+  </button>
+  <div class="brand">
+    <strong>Bibliotecas de Acessibilidade</strong>
+    <span>6 bibliotecas · JavaScript</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="progress-wrap">
+    <span class="progress-text" id="progress-text">01 / 12</span>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+  <button class="btn" id="toggle-notes" aria-label="Abrir notas do apresentador" aria-pressed="false" title="Roteiro (N)">
+    <i class="material-icons" style="font-size:18px">sticky_note_2</i>
+    <span style="display:none" class="hide-mobile">Roteiro</span>
+    <kbd style="display:none" class="hide-mobile">N</kbd>
+  </button>
+  <button class="btn btn-icon" id="toggle-theme" aria-label="Alternar modo claro/escuro" title="Tema (D)">
+    <i class="material-icons" id="theme-icon">dark_mode</i>
+  </button>
+</header>
+
+<div class="thin-progress"><div id="thin-progress-fill"></div></div>
+
+<!-- ═══ DECK ═══ -->
+<main class="deck" id="deck" role="main">
+
+<!-- ═══ SLIDE 1 — CAPA ═══ -->
+<section class="slide cover" data-slide="1" data-notes="Olá! Esta é uma apresentação sobre bibliotecas JavaScript de acessibilidade. Vou mostrar para vocês 6 bibliotecas que tornam qualquer site mais acessível para pessoas com diferentes necessidades — baixa visão, fotossensibilidade, surdez, mobilidade reduzida, deficiência cognitiva. A apresentação tem cerca de 8 a 10 minutos. Antes de começar, uma pergunta: vocês já pararam para pensar em quantas pessoas podem não conseguir usar um site por causa de cores com pouco contraste, fontes pequenas, ou ausência de áudio? É isso que vamos resolver. Vamos lá!">
+  <div class="slide-num">01 / 12</div>
+  <div class="cover-icon dot-bg">
+    <i class="material-icons">accessibility</i>
+  </div>
+  <span class="cover-pill">Acessibilidade na Web</span>
+  <h1>Bibliotecas de Acessibilidade</h1>
+  <p class="subtitle">Como JavaScript pode tornar a web inclusiva para todas as pessoas — com poucas linhas de código.</p>
+  <div class="cover-stats">
+    <div><div class="num">6</div><div class="lbl">bibliotecas</div></div>
+    <div><div class="num">JS</div><div class="lbl">linguagem</div></div>
+    <div><div class="num">A11Y</div><div class="lbl">foco</div></div>
+    <div><div class="num">∞</div><div class="lbl">impacto</div></div>
+  </div>
+  <p class="cover-hint">
+    Use <kbd>↑</kbd> <kbd>↓</kbd> para navegar · <kbd>N</kbd> roteiro · <kbd>D</kbd> tema · <kbd>M</kbd> índice
+  </p>
+</section>
+
+<!-- ═══ SLIDE 2 — POR QUE ACESSIBILIDADE IMPORTA ═══ -->
+<section class="slide" data-slide="2" data-notes="Antes de mostrar as bibliotecas, deixe-me explicar por que acessibilidade é importante. Segundo a OMS, mais de 1 bilhão de pessoas no mundo vivem com algum tipo de deficiência. Isso é cerca de 15% da população mundial. E quando um site não é acessível, essas pessoas simplesmente não conseguem usar — seja para comprar um produto, ler uma notícia, ou se cadastrar num serviço. Pior: em muitos países, inclusive no Brasil, há leis que exigem acessibilidade em sites. Mais do que uma obrigação legal, acessibilidade é um princípio básico: a web é para todas as pessoas. As 6 bibliotecas que vou mostrar resolvem 6 necessidades diferentes, e o melhor — em poucas linhas cada uma.">
+  <div class="slide-num">02 / 12</div>
+  <span class="eyebrow">Contexto</span>
+  <h2 class="slide-title">Por que acessibilidade importa?</h2>
+  <p class="slide-subtitle">Mais de 1 bilhão de pessoas no mundo vivem com algum tipo de deficiência — e a web precisa funcionar para todas elas.</p>
+
+  <div class="card-grid cols-3">
+    <div class="card">
+      <div class="card-num">01</div>
+      <h3>É uma questão de pessoas</h3>
+      <p>Pessoas com baixa visão, surdez, mobilidade reduzida ou deficiência cognitiva precisam de adaptações para navegar. Sem elas, ficam de fora.</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02</div>
+      <h3>É uma obrigação legal</h3>
+      <p>No Brasil, a Lei Brasileira de Inclusão (Lei 13.146/2015) exige acessibilidade em sites. Empresas podem ser multadas por descumprimento.</p>
+    </div>
+    <div class="card feature">
+      <div class="card-num">03</div>
+      <h3>É mais fácil do que parece</h3>
+      <p>As 6 bibliotecas que veremos a seguir resolvem problemas reais de acessibilidade em poucas linhas de código — sem reinventar a roda.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 3 — O QUE SÃO BIBLIOTECAS JS ═══ -->
+<section class="slide" data-slide="3" data-notes="Antes de falar das bibliotecas específicas, deixe-me explicar rapidamente o que é uma biblioteca JavaScript. Toda página web tem três camadas: o HTML, que é a estrutura — define o que aparece na página, como botões, textos, imagens. O CSS, que é a aparência — cores, tamanhos, posições. E o JavaScript, que é o comportamento — a interatividade, o que acontece quando você clica num botão, por exemplo. As bibliotecas JavaScript são conjuntos de código pronto, escritos por outros programadores, que você adiciona à sua página para ganhar funcionalidades sem precisar programar do zero. Em vez de escrever 200 linhas para fazer um carrossel, você importa uma biblioteca e usa em 2 linhas. É por isso que elas são tão populares — aceleram o desenvolvimento. E no caso de acessibilidade, elas tornam sites inclusivos sem que o programador precise ser especialista no assunto.">
+  <div class="slide-num">03 / 12</div>
+  <span class="eyebrow">Conceito</span>
+  <h2 class="slide-title">O que são bibliotecas JavaScript?</h2>
+  <p class="slide-subtitle">Conjuntos de código pronto que economizam tempo e adicionam funcionalidades prontas para uso.</p>
+
+  <div class="card-grid cols-2">
+    <div class="card">
+      <div class="card-num">1</div>
+      <h3>HTML — estrutura</h3>
+      <p>Define o que aparece na página: botões, textos, imagens e a organização dos elementos.</p>
+    </div>
+    <div class="card">
+      <div class="card-num">2</div>
+      <h3>CSS — aparência</h3>
+      <p>Define como a página se parece: cores, tamanhos, posições, animações visuais.</p>
+    </div>
+    <div class="card">
+      <div class="card-num">3</div>
+      <h3>JavaScript — comportamento</h3>
+      <p>Adiciona interatividade: cliques, validações, animações, comunicação com servidores.</p>
+    </div>
+    <div class="card feature">
+      <div class="card-num">4</div>
+      <h3>Bibliotecas JS — soluções prontas</h3>
+      <p>Oferecem comportamentos específicos já prontos: animações, gráficos, modais, carrosséis, validação de formulários etc.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 4 — COMO INCLUIR ═══ -->
+<section class="slide" data-slide="4" data-notes="Para incluir uma biblioteca JavaScript numa página HTML, o caminho mais comum é usar um CDN — Content Delivery Network, ou Rede de Distribuição de Conteúdo. Você só precisa de duas coisas: uma tag script com o endereço da biblioteca, e depois outra tag script com o seu código que chama a função da biblioteca. Neste exemplo que está na tela, importei a biblioteca canvas-confetti e chamei a função confetti() — e pronto, a página exibe uma animação de confetes. O mesmo padrão serve para todas as bibliotecas que vou mostrar a seguir. As únicas variações são: o endereço do CDN, o nome da função a ser chamada e os parâmetros. É simples assim. Vale lembrar que também é possível baixar o arquivo .js localmente e importar do próprio servidor, mas o CDN é mais rápido para começar.">
+  <div class="slide-num">04 / 12</div>
+  <span class="eyebrow">Mão na massa</span>
+  <h2 class="slide-title">Como incluir uma biblioteca no HTML</h2>
+  <p class="slide-subtitle">O mesmo padrão serve para todas as 6 bibliotecas — só muda o endereço e a função.</p>
+
+  <div style="display:grid;gap:24px;grid-template-columns:1fr" class="lib-grid">
+    <div>
+      <div class="code-caption">index.html — exemplo com canvas-confetti</div>
+<pre class="code"><span class="tag">&lt;html&gt;</span>
+  <span class="tag">&lt;head&gt;</span>
+    <span class="tag">&lt;style&gt;</span>
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+    <span class="tag">&lt;/style&gt;</span>
+
+    <span class="com">&lt;!-- 1. Importa a biblioteca via CDN --&gt;</span>
+    <span class="tag">&lt;script</span> <span class="key">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+
+    <span class="com">&lt;!-- 2. Usa a função confetti() --&gt;</span>
+    <span class="tag">&lt;script&gt;</span>
+      <span class="fn">confetti</span>();
+    <span class="tag">&lt;/script&gt;</span>
+  <span class="tag">&lt;/head&gt;</span>
+
+  <span class="tag">&lt;body&gt;</span>
+    <span class="tag">&lt;h1&gt;</span>Texto de Exemplo 🎉<span class="tag">&lt;/h1&gt;</span>
+  <span class="tag">&lt;/body&gt;</span>
+<span class="tag">&lt;/html&gt;</span></pre>
+    </div>
+
+    <div>
+      <div class="card-grid cols-2" style="grid-template-columns:1fr">
+        <div class="card">
+          <h3 style="display:flex;align-items:center;gap:8px;font-size:14px;">
+            <i class="material-icons" style="font-size:18px;color:var(--accent)">check_circle</i>
+            Passo a passo
+          </h3>
+          <ol style="margin-top:8px;padding-left:20px;font-size:12px;line-height:1.7;color:var(--text-soft);">
+            <li>Importar via tag <code style="font-family:var(--font-mono);background:var(--code-bg);color:var(--code-text);padding:1px 6px;border-radius:3px;font-size:11px;">&lt;script src&gt;</code></li>
+            <li>Chamar a função que a biblioteca expõe</li>
+            <li>Pronto! O comportamento está disponível</li>
+          </ol>
+        </div>
+        <div class="card feature">
+          <p style="font-size:13px;line-height:1.6;color:var(--text);">O mesmo padrão de <strong>importar e chamar</strong> vale para todas as 6 bibliotecas que veremos a seguir.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 5 — VISÃO GERAL ═══ -->
+<section class="slide" data-slide="5" data-notes="Agora vamos ao coração da apresentação. Eu escolhi 6 bibliotecas, cada uma cuidando de um tipo diferente de acessibilidade. Vou mostrá-las rapidamente uma a uma agora, e depois entramos em detalhes. Darkmode.js para fotossensibilidade e fadiga visual. Web Speech API para converter texto em voz, ajudando pessoas cegas ou com baixa visão. Alertify.js para criar alertas claros para quem tem deficiência cognitiva ou baixa visão. RecordRTC para gravar áudio, ajudando quem tem dificuldade de digitação. Accessibility Widget, um painel completo com 6 ferramentas. E VLibras, que traduz português para Libras usando um avatar. Juntas, elas cobrem praticamente todas as principais necessidades de acessibilidade na web. Vamos ver cada uma em detalhe.">
+  <div class="slide-num">05 / 12</div>
+  <span class="eyebrow">Visão geral</span>
+  <h2 class="slide-title">As 6 bibliotecas</h2>
+  <p class="slide-subtitle">Cada uma resolve um problema diferente de acessibilidade.</p>
+
+  <div class="card-grid cols-3" id="overview-grid">
+    <!-- Será preenchido via JS a partir de LIBRARIES -->
+  </div>
+</section>
+
+<!-- ═══ SLIDES 6-11 — BIBLIOTECAS (preenchidos via JS) ═══ -->
+<section class="slide" data-slide="6" data-lib="0" id="lib-darkmode">
+  <!-- conteúdo via JS -->
+</section>
+<section class="slide" data-slide="7" data-lib="1" id="lib-webspeech">
+  <!-- conteúdo via JS -->
+</section>
+<section class="slide" data-slide="8" data-lib="2" id="lib-alertify">
+  <!-- conteúdo via JS -->
+</section>
+<section class="slide" data-slide="9" data-lib="3" id="lib-recordrtc">
+  <!-- conteúdo via JS -->
+</section>
+<section class="slide" data-slide="10" data-lib="4" id="lib-accessibility-widget">
+  <!-- conteúdo via JS -->
+</section>
+<section class="slide" data-slide="11" data-lib="5" id="lib-vlibras">
+  <!-- conteúdo via JS -->
+</section>
+
+<!-- ═══ SLIDE 12 — ENCERRAMENTO ═══ -->
+<section class="slide closing" data-slide="12" data-notes="Para encerrar, obrigado pela atenção. Quero deixar uma mensagem final: a web é para todas as pessoas, e as 6 bibliotecas que mostrei hoje provam que tornar um site acessível não precisa ser caro nem complicado. Na maioria dos casos, são poucas linhas de código — como vocês viram. Espero que isso inspire vocês a incluir acessibilidade nos próximos projetos de vocês. Agora estou à disposição para perguntas. Obrigado!">
+  <div class="slide-num">12 / 12</div>
+  <div class="closing-icon">
+    <i class="material-icons">auto_awesome</i>
+  </div>
+  <h2>Obrigado!</h2>
+  <p class="closing-sub">Perguntas?</p>
+  <div class="closing-body">
+    <p>A web é para todas as pessoas. As 6 bibliotecas que vimos provam que tornar um site acessível não precisa ser caro nem complicado — na maioria dos casos, são poucas linhas de código.</p>
+    <p>Espero que esta apresentação inspire você a incluir acessibilidade nos seus próximos projetos.</p>
+  </div>
+  <div class="closing-dots">
+    <span><i></i> 6 bibliotecas</span>
+    <span class="dot-accent"><i></i> Acessibilidade</span>
+    <span class="dot-mute"><i></i> JavaScript</span>
+  </div>
+</section>
+
+</main>
+
+<div vw class="enabled">
+  <div vw-access-button class="active"></div>
+  <div vw-plugin-wrapper>
+    <div class="vw-plugin-top-wrapper"></div>
+  </div>
+</div>
+
+
+<!-- ═══ NAV BUTTONS ═══ -->
+<nav class="nav-btns" aria-label="Navegação entre slides">
+  <button class="nav-btn" id="prev-btn" aria-label="Slide anterior">
+    <i class="material-icons">keyboard_arrow_up</i>
+  </button>
+  <button class="nav-btn primary" id="next-btn" aria-label="Próximo slide">
+    <i class="material-icons">keyboard_arrow_down</i>
+  </button>
+</nav>
+
+<!-- ═══ NOTES PANEL ═══ -->
+<div class="notes-panel" id="notes-panel" role="dialog" aria-label="Notas do apresentador">
+  <div class="notes-inner">
+    <div class="notes-header">
+      <span class="notes-icon"><i class="material-icons">sticky_note_2</i></span>
+      <div>
+        <div class="notes-title" id="notes-title">Roteiro do slide 1 de 12</div>
+        <div class="notes-sub" id="notes-sub">Capa · Pressione ESC para fechar</div>
+      </div>
+      <button class="notes-close" id="close-notes" aria-label="Fechar painel de notas">
+        <i class="material-icons" style="font-size:18px">close</i>
+      </button>
+    </div>
+    <div class="notes-body" id="notes-body"></div>
+  </div>
+</div>
+
+<!-- ═══ INDEX DRAWER ═══ -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<aside class="drawer" id="drawer" aria-label="Índice de slides">
+  <div class="drawer-head">
+    <h2>Índice</h2>
+    <button class="notes-close" id="close-drawer" aria-label="Fechar índice">
+      <i class="material-icons" style="font-size:18px">close</i>
+    </button>
+  </div>
+  <ol class="drawer-list" id="drawer-list"></ol>
+</aside>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DADOS DAS BIBLIOTECAS
+// ═══════════════════════════════════════════════════════════════
+const LIBRARIES = [
+  {
+    name: 'Darkmode.js',
+    tagline: 'Modo escuro com um clique',
+    description: 'Adiciona um botão de modo escuro em qualquer site. Ajuda quem tem fotossensibilidade, enxaqueca, baixa visão ou fadiga visual.',
+    badges: ['Fotossensibilidade', 'Baixa visão', 'Fadiga visual'],
+    url: 'https://darkmodejs.learn.uno/',
+    accent: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+    icon: 'dark_mode',
+    notes: 'Darkmode.js — com poucas linhas adiciona o botão de modo escuro. Experimente o botão abaixo: ele inverte as cores da área de demonstração, o mesmo efeito que a biblioteca aplica na página inteira.',
+    demoId: 'darkmode'
+  },
+  {
+    name: 'Web Speech API',
+    tagline: 'Texto convertido em voz, nativamente',
+    description: 'API nativa do navegador que transforma texto em voz. Funciona offline, sem instalar nada. Ideal para pessoas cegas ou com baixa visão.',
+    badges: ['Nativa', 'Offline', 'Texto → Voz'],
+    url: 'https://developer.mozilla.org/pt-BR/docs/Web/API/Web_Speech_API',
+    accent: 'linear-gradient(135deg, #10b981, #0d9488)',
+    icon: 'record_voice_over',
+    notes: 'Web Speech API — nativa do navegador. Clique em Falar e o sistema lê o texto em voz alta, em português.',
+    demoId: 'webspeech'
+  },
+  {
+    name: 'Alertify.js',
+    tagline: 'Alertas acessíveis para leitores de tela',
+    description: 'Cria notificações e diálogos com cores e ícones claros (sucesso, erro, aviso). Ajuda pessoas com deficiência cognitiva ou baixa visão a entender o feedback na hora.',
+    badges: ['Deficiência cognitiva', 'Baixa visão', 'Feedback claro'],
+    url: 'https://alertifyjs.com/',
+    accent: 'linear-gradient(135deg, #f59e0b, #ea580c)',
+    icon: 'notifications',
+    notes: 'Alertify.js — clique nos botões para ver os alertas com cores e ícones diferentes.',
+    demoId: 'alertify'
+  },
+  {
+    name: 'RecordRTC',
+    tagline: 'Gravação de áudio e vídeo no navegador',
+    description: 'Grava áudio (e vídeo) direto no navegador, sem servidor. Útil para quem tem mobilidade reduzida ou dificuldade de digitação e prefere mandar um áudio.',
+    badges: ['Mobilidade reduzida', 'Dificuldade de digitação', 'Áudio'],
+    url: 'https://www.recordrtc.org/',
+    accent: 'linear-gradient(135deg, #f43f5e, #ec4899)',
+    icon: 'mic',
+    notes: 'RecordRTC — clique em Gravar, fale algo, depois Pare. O áudio aparece para você ouvir.',
+    demoId: 'recordrtc'
+  },
+  {
+    name: 'Accessibility Widget',
+    tagline: 'Painel completo de acessibilidade',
+    description: 'Botão flutuante com várias ferramentas: aumentar/diminuir texto, alto contraste, escala de cinza, sublinhar links e parar animações.',
+    badges: ['Aumentar texto', 'Alto contraste', 'Escala de cinza', 'Parar animações'],
+    url: 'https://github.com/ranfisald/accessibility-widget',
+    accent: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+    icon: 'accessibility_new',
+    notes: 'Accessibility Widget — use os botões do painel e veja o texto de exemplo mudar na hora.',
+    demoId: 'a11y'
+  },
+  {
+    name: 'VLibras',
+    tagline: 'Tradutor automático de português para Libras',
+    description: 'Ferramenta do governo brasileiro que traduz o conteúdo da página para Libras com um avatar intérprete. Essencial para pessoas surdas.',
+    badges: ['Pessoas surdas', 'Avatar intérprete', 'Português → Libras'],
+    url: 'https://vlibras.gov.br/',
+    accent: 'linear-gradient(135deg, #eab308, #d97706)',
+    icon: 'sign_language',
+    notes: 'VLibras — o botão flutuante do VLibras aparece no canto da tela. Clique nele e selecione um texto da página para ver o avatar traduzir em Libras.',
+    demoId: 'vlibras'
+  }
+];
+
+// Títulos curtos dos slides para o índice
+const SLIDE_TITLES = [
+  'Bibliotecas de Acessibilidade',
+  'Por que acessibilidade importa?',
+  'O que são bibliotecas JavaScript?',
+  'Como incluir uma biblioteca no HTML',
+  'As 6 bibliotecas — visão geral',
+  'Darkmode.js',
+  'Web Speech API',
+  'Alertify.js',
+  'RecordRTC',
+  'Accessibility Widget',
+  'VLibras',
+  'Obrigado!'
+];
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS DE RENDERIZAÇÃO
+// ═══════════════════════════════════════════════════════════════
+function highlightCode(code, lang) {
+  // Escape HTML
+  let out = code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  if (lang === 'html') {
+    out = out.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="com">$1</span>');
+    out = out.replace(/("[^"]*"|'[^']*')/g, '<span class="str">$1</span>');
+    out = out.replace(/(&lt;\/?)([a-zA-Z][\w-]*)/g, '$1<span class="tag">$2</span>');
+    out = out.replace(/([\s])([a-zA-Z-]+)(=)/g, '$1<span class="key">$2</span>$3');
+  } else {
+    out = out.replace(/(\/\/[^\n]*)/g, '<span class="com">$1</span>');
+    out = out.replace(/('[^']*'|"[^"]*"|`[^`]*`)/g, '<span class="str">$1</span>');
+    out = out.replace(/\b(const|let|var|function|async|await|return|new|if|else|for|while|class|import|from|export|default)\b/g, '<span class="key">$1</span>');
+    out = out.replace(/\b([a-zA-Z_$][\w$]*)(?=\s*\()/g, '<span class="fn">$1</span>');
+  }
+  return out;
+}
+
+function renderOverviewGrid() {
+  const grid = document.getElementById('overview-grid');
+  if (!grid) return;
+  grid.innerHTML = LIBRARIES.map((lib, i) => `
+    <article class="grid-card">
+      <div class="gc-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="gc-icon" style="background:${lib.accent}">
+        <i class="material-icons">${lib.icon}</i>
+      </div>
+      <h3>${lib.name}</h3>
+      <p class="gc-tag">${lib.tagline}</p>
+      <p class="gc-desc">${lib.description}</p>
+    </article>
+  `).join('');
+}
+
+function renderLibrarySlide(idx) {
+  const lib = LIBRARIES[idx];
+  const section = document.querySelector(`[data-lib="${idx}"]`);
+  if (!section) return;
+
+  const slideNum = String(idx + 6).padStart(2, '0');
+  const totalNum = '12';
+  const demo = buildDemo(lib.demoId);
+
+  section.innerHTML = `
+    <div class="slide-num">${slideNum} / ${totalNum}</div>
+    <div class="lib-header">
+      <div class="lib-icon" style="background:${lib.accent}">
+        <i class="material-icons">${lib.icon}</i>
+      </div>
+      <div class="lib-info">
+        <span class="eyebrow">Biblioteca</span>
+        <h2>${lib.name}</h2>
+        <p class="lib-tagline">${lib.tagline}</p>
+      </div>
+      <a class="lib-link" href="${lib.url}" target="_blank" rel="noopener noreferrer">
+        <i class="material-icons" style="font-size:14px">open_in_new</i>
+        Site oficial
+      </a>
+    </div>
+    <p class="lib-desc">${lib.description}</p>
+    <div class="badges">
+      ${lib.badges.map(b => `<span class="badge">${b}</span>`).join('')}
+    </div>
+    <div class="demo-box">
+      <h4>Implementação ao vivo</h4>
+      ${demo}
+    </div>
+  `;
+  section.dataset.notes = lib.notes || '';
+}
+
+function buildDemo(id) {
+  switch (id) {
+    case 'darkmode':
+      return `
+        <div id="darkmode-demo-area">
+          <div class="demo-actions">
+            <button type="button" class="demo-btn" id="btn-darkmode-toggle">
+              <i class="material-icons" style="font-size:18px">dark_mode</i>
+              Alternar modo escuro
+            </button>
+          </div>
+          <div class="demo-sample">
+            <strong>Área de demonstração</strong><br/>
+            Este bloco simula o efeito do Darkmode.js: ao clicar, as cores invertem para reduzir o brilho e o cansaço visual.
+          </div>
+          <p class="demo-status" id="darkmode-status">Modo atual: claro (nesta demo)</p>
+        </div>`;
+    case 'webspeech':
+      return `
+        <div class="demo-actions">
+          <button type="button" class="demo-btn" id="btn-speak">
+            <i class="material-icons" style="font-size:18px">record_voice_over</i>
+            Falar este texto
+          </button>
+          <button type="button" class="demo-btn secondary" id="btn-stop-speak">
+            <i class="material-icons" style="font-size:18px">stop</i>
+            Parar
+          </button>
+        </div>
+        <div class="demo-sample" id="speech-text">
+          Olá! Esta é uma demonstração da Web Speech API. O navegador está lendo este texto em voz alta, em português do Brasil, sem nenhuma biblioteca externa.
+        </div>
+        <p class="demo-status" id="speech-status"></p>`;
+    case 'alertify':
+      return `
+        <div class="demo-actions">
+          <button type="button" class="demo-btn success" id="btn-alert-ok">Sucesso</button>
+          <button type="button" class="demo-btn danger" id="btn-alert-err">Erro</button>
+          <button type="button" class="demo-btn warn" id="btn-alert-warn">Aviso</button>
+          <button type="button" class="demo-btn secondary" id="btn-alert-msg">Mensagem</button>
+          <button type="button" class="demo-btn" id="btn-alert-confirm">Confirmar</button>
+        </div>
+        <p class="demo-status">Clique em qualquer botão para ver o alerta da Alertify.js.</p>`;
+    case 'recordrtc':
+      return `
+        <div class="demo-actions">
+          <button type="button" class="demo-btn" id="btn-rec-start">
+            <i class="material-icons" style="font-size:18px">mic</i>
+            Gravar
+          </button>
+          <button type="button" class="demo-btn danger" id="btn-rec-stop" disabled>
+            <i class="material-icons" style="font-size:18px">stop</i>
+            Parar
+          </button>
+        </div>
+        <p class="demo-status" id="rec-status">Pronto para gravar (pede permissão do microfone).</p>
+        <audio id="rec-audio" class="demo-audio" controls style="display:none"></audio>`;
+    case 'a11y':
+      return `
+        <div class="demo-sample" id="a11y-sample">
+          <strong>Texto de exemplo</strong> — use os botões abaixo para aumentar a fonte, ativar alto contraste, escala de cinza ou sublinhar links.
+          <a href="#a11y-sample" style="color:var(--primary)">Este é um link de exemplo</a>.
+        </div>
+        <div class="a11y-panel-demo" id="a11y-panel-demo">
+          <button type="button" data-a11y="increase">A+ Fonte maior</button>
+          <button type="button" data-a11y="decrease">A− Fonte menor</button>
+          <button type="button" data-a11y="contrast">Alto contraste</button>
+          <button type="button" data-a11y="grayscale">Escala de cinza</button>
+          <button type="button" data-a11y="underline">Sublinhar links</button>
+          <button type="button" data-a11y="reset">Resetar</button>
+        </div>
+        <p class="demo-status" id="a11y-status"></p>`;
+    case 'vlibras':
+      return `
+        <div class="demo-sample">
+          O VLibras está ativo nesta página. Procure o botão azul/verde do VLibras (geralmente no canto inferior direito). Clique nele e depois selecione qualquer texto da apresentação para ver o avatar traduzir em Libras.
+        </div>
+        <div class="demo-vlibras-note">
+          <strong>Dica:</strong> o plugin oficial do governo foi carregado. Se o botão não aparecer, recarregue a página ou verifique o bloqueador de scripts.
+        </div>`;
+    default:
+      return '';
+  }
+}
+
+function wireDemos() {
+  // Darkmode demo (local, no conflict with page theme)
+  const dmBtn = document.getElementById('btn-darkmode-toggle');
+  const dmArea = document.getElementById('darkmode-demo-area');
+  const dmStatus = document.getElementById('darkmode-status');
+  if (dmBtn && dmArea) {
+    dmBtn.onclick = () => {
+      const on = dmArea.classList.toggle('is-dark');
+      if (dmStatus) dmStatus.textContent = on ? 'Modo atual: escuro (nesta demo)' : 'Modo atual: claro (nesta demo)';
+    };
+  }
+
+  // Web Speech
+  const speakBtn = document.getElementById('btn-speak');
+  const stopSpeak = document.getElementById('btn-stop-speak');
+  const speechText = document.getElementById('speech-text');
+  const speechStatus = document.getElementById('speech-status');
+  if (speakBtn && speechText) {
+    speakBtn.onclick = () => {
+      if (!window.speechSynthesis) {
+        if (speechStatus) speechStatus.textContent = 'Seu navegador não suporta Web Speech API.';
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(speechText.textContent.trim());
+      u.lang = 'pt-BR';
+      u.rate = 1;
+      u.onstart = () => { if (speechStatus) speechStatus.textContent = 'Falando…'; };
+      u.onend = () => { if (speechStatus) speechStatus.textContent = 'Pronto.'; };
+      window.speechSynthesis.speak(u);
+    };
+  }
+  if (stopSpeak) {
+    stopSpeak.onclick = () => {
+      window.speechSynthesis?.cancel();
+      if (speechStatus) speechStatus.textContent = 'Parado.';
+    };
+  }
+
+  // Alertify — handlers always attached; check library at click time
+  const ok = document.getElementById('btn-alert-ok');
+  const err = document.getElementById('btn-alert-err');
+  const warn = document.getElementById('btn-alert-warn');
+  const msg = document.getElementById('btn-alert-msg');
+  const conf = document.getElementById('btn-alert-confirm');
+  function needAlertify() {
+    if (!window.alertify) {
+      alert('Alertify ainda não carregou. Espere 1 segundo e tente de novo.');
+      return false;
+    }
+    return true;
+  }
+  if (ok) ok.onclick = () => { if (needAlertify()) alertify.success('Salvo com sucesso!'); };
+  if (err) err.onclick = () => { if (needAlertify()) alertify.error('Falha ao enviar o formulário.'); };
+  if (warn) warn.onclick = () => { if (needAlertify()) alertify.warning('Verifique os campos obrigatórios.'); };
+  if (msg) msg.onclick = () => { if (needAlertify()) alertify.message('Dica: você pode pressionar Ctrl + S.'); };
+  if (conf) conf.onclick = () => {
+    if (!needAlertify()) return;
+    alertify.confirm(
+      'Confirmar exclusão',
+      'Tem certeza que deseja apagar este registro?',
+      () => alertify.success('Registro removido.'),
+      () => alertify.message('Operação cancelada.')
+    );
+  };
+
+  // RecordRTC
+  let recorder = null;
+  let stream = null;
+  const startBtn = document.getElementById('btn-rec-start');
+  const stopBtn = document.getElementById('btn-rec-stop');
+  const recStatus = document.getElementById('rec-status');
+  const recAudio = document.getElementById('rec-audio');
+  if (startBtn && stopBtn) {
+    startBtn.onclick = async () => {
+      if (!window.RecordRTC) {
+        if (recStatus) recStatus.textContent = 'RecordRTC ainda não carregou. Aguarde um instante.';
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recorder = new RecordRTC(stream, { type: 'audio', mimeType: 'audio/webm' });
+        recorder.startRecording();
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        if (recStatus) recStatus.textContent = 'Gravando… fale algo e clique em Parar.';
+        if (recAudio) recAudio.style.display = 'none';
+      } catch (e) {
+        if (recStatus) recStatus.textContent = 'Não foi possível acessar o microfone: ' + (e.message || e);
+      }
+    };
+    stopBtn.onclick = () => {
+      if (!recorder) return;
+      recorder.stopRecording(() => {
+        const blob = recorder.getBlob();
+        if (recAudio) {
+          recAudio.src = URL.createObjectURL(blob);
+          recAudio.style.display = 'block';
+        }
+        if (recStatus) recStatus.textContent = 'Gravação pronta. Ouça abaixo.';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        stream?.getTracks().forEach(t => t.stop());
+        recorder = null;
+        stream = null;
+      });
+    };
+  }
+
+  // Accessibility widget demo
+  const sample = document.getElementById('a11y-sample');
+  const a11yStatus = document.getElementById('a11y-status');
+  let fontScale = 1;
+  if (sample) {
+    document.querySelectorAll('#a11y-panel-demo [data-a11y]').forEach(btn => {
+      btn.onclick = () => {
+        const action = btn.dataset.a11y;
+        if (action === 'increase') {
+          fontScale = Math.min(1.6, fontScale + 0.15);
+          sample.style.fontSize = (15 * fontScale) + 'px';
+        } else if (action === 'decrease') {
+          fontScale = Math.max(0.75, fontScale - 0.15);
+          sample.style.fontSize = (15 * fontScale) + 'px';
+        } else if (action === 'contrast') {
+          sample.classList.toggle('high-contrast');
+          btn.classList.toggle('active', sample.classList.contains('high-contrast'));
+        } else if (action === 'grayscale') {
+          sample.classList.toggle('grayscale');
+          btn.classList.toggle('active', sample.classList.contains('grayscale'));
+        } else if (action === 'underline') {
+          sample.classList.toggle('underline-links');
+          btn.classList.toggle('active', sample.classList.contains('underline-links'));
+        } else if (action === 'reset') {
+          fontScale = 1;
+          sample.style.fontSize = '';
+          sample.classList.remove('high-contrast', 'grayscale', 'underline-links');
+          document.querySelectorAll('#a11y-panel-demo [data-a11y]').forEach(b => b.classList.remove('active'));
+        }
+        if (a11yStatus) a11yStatus.textContent = 'Aplicado: ' + action;
+      };
+    });
+  }
+}
+
+function renderAllLibrarySlides() {
+  for (let i = 0; i < LIBRARIES.length; i++) {
+    renderLibrarySlide(i);
+  }
+}
+
+function renderDrawer() {
+  const list = document.getElementById('drawer-list');
+  if (!list) return;
+  list.innerHTML = SLIDE_TITLES.map((title, i) => `
+    <li>
+      <button data-target="${i}" class="${i === 0 ? 'active' : ''}">
+        <span class="num">${String(i + 1).padStart(2, '0')}</span>
+        <span>${title}</span>
+      </button>
+    </li>
+  `).join('');
+
+  list.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      goTo(Number(btn.dataset.target));
+      closeDrawer();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════════════════════════
+const deck = document.getElementById('deck');
+const sections = () => Array.from(document.querySelectorAll('.slide'));
+let current = 0;
+const TOTAL = 12;
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e) => {
+    if (e.isIntersecting && e.intersectionRatio >= 0.5) {
+      const idx = Number(e.target.dataset.slide) - 1;
+      if (idx !== current) {
+        current = idx;
+        updateUI();
+      }
+    }
+  });
+}, { root: deck, threshold: [0.5, 0.75, 1] });
+
+function observeSections() {
+  sections().forEach((s) => observer.observe(s));
+}
+
+function updateUI() {
+  // Progress bar
+  const pct = ((current + 1) / TOTAL) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent =
+    String(current + 1).padStart(2, '0') + ' / ' + String(TOTAL).padStart(2, '0');
+  document.getElementById('thin-progress-fill').style.width = pct + '%';
+
+  // Nav buttons
+  document.getElementById('prev-btn').disabled = current === 0;
+  document.getElementById('next-btn').disabled = current === TOTAL - 1;
+
+  // Drawer active
+  document.querySelectorAll('.drawer-list button').forEach((b, i) => {
+    b.classList.toggle('active', i === current);
+  });
+
+  // Notes panel content
+  const section = sections()[current];
+  const notes = section?.dataset.notes || '';
+  const title = SLIDE_TITLES[current] || '';
+  document.getElementById('notes-title').textContent =
+    `Roteiro do slide ${current + 1} de ${TOTAL}`;
+  document.getElementById('notes-sub').textContent =
+    `${title} · Pressione ESC para fechar`;
+  document.getElementById('notes-body').textContent = notes;
+}
+
+function goTo(idx) {
+  const target = Math.max(0, Math.min(TOTAL - 1, idx));
+  const section = sections()[target];
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    current = target;
+    updateUI();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENTOS
+// ═══════════════════════════════════════════════════════════════
+
+// Botões de navegação
+document.getElementById('prev-btn').addEventListener('click', () => goTo(current - 1));
+document.getElementById('next-btn').addEventListener('click', () => goTo(current + 1));
+
+// Theme toggle
+const themeBtn = document.getElementById('toggle-theme');
+const themeIcon = document.getElementById('theme-icon');
+const html = document.documentElement;
+
+function setTheme(t) {
+  html.dataset.theme = t;
+  themeIcon.textContent = t === 'dark' ? 'dark_mode' : 'light_mode';
+  try { localStorage.setItem('a11y-theme', t); } catch (e) {}
+}
+
+themeBtn.addEventListener('click', () => {
+  setTheme(html.dataset.theme === 'dark' ? 'light' : 'dark');
+});
+
+try {
+  const saved = localStorage.getItem('a11y-theme');
+  if (saved) setTheme(saved);
+} catch (e) {}
+
+// Notes panel
+const notesPanel = document.getElementById('notes-panel');
+const notesBtn = document.getElementById('toggle-notes');
+
+function openNotes() {
+  notesPanel.classList.add('open');
+  notesBtn.classList.add('active');
+  notesBtn.setAttribute('aria-pressed', 'true');
+}
+function closeNotes() {
+  notesPanel.classList.remove('open');
+  notesBtn.classList.remove('active');
+  notesBtn.setAttribute('aria-pressed', 'false');
+}
+function toggleNotes() {
+  notesPanel.classList.contains('open') ? closeNotes() : openNotes();
+}
+
+notesBtn.addEventListener('click', toggleNotes);
+document.getElementById('close-notes').addEventListener('click', closeNotes);
+
+// Drawer
+const drawer = document.getElementById('drawer');
+const backdrop = document.getElementById('drawer-backdrop');
+
+function openDrawer() {
+  drawer.classList.add('open');
+  backdrop.classList.add('open');
+}
+function closeDrawer() {
+  drawer.classList.remove('open');
+  backdrop.classList.remove('open');
+}
+
+document.getElementById('open-index').addEventListener('click', openDrawer);
+document.getElementById('close-drawer').addEventListener('click', closeDrawer);
+backdrop.addEventListener('click', closeDrawer);
+
+// Keyboard
+window.addEventListener('keydown', (e) => {
+  const tag = (e.target?.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') return;
+
+  switch (e.key) {
+    case 'ArrowDown':
+    case 'PageDown':
+      e.preventDefault();
+      goTo(current + 1);
+      break;
+    case 'ArrowUp':
+    case 'PageUp':
+      e.preventDefault();
+      goTo(current - 1);
+      break;
+    case ' ':
+      e.preventDefault();
+      goTo(current + 1);
+      break;
+    case 'Home':
+      e.preventDefault();
+      goTo(0);
+      break;
+    case 'End':
+      e.preventDefault();
+      goTo(TOTAL - 1);
+      break;
+    case 'Escape':
+      if (notesPanel.classList.contains('open')) closeNotes();
+      else if (drawer.classList.contains('open')) closeDrawer();
+      break;
+    case 'n':
+    case 'N':
+      e.preventDefault();
+      toggleNotes();
+      break;
+    case 'd':
+    case 'D':
+      e.preventDefault();
+      setTheme(html.dataset.theme === 'dark' ? 'light' : 'dark');
+      break;
+    case 'm':
+    case 'M':
+      e.preventDefault();
+      drawer.classList.contains('open') ? closeDrawer() : openDrawer();
+      break;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderOverviewGrid();
+renderAllLibrarySlides();
+renderDrawer();
+observeSections();
+updateUI();
+wireDemos();
+
+// Re-wire demos when navigating (botões + teclado + scroll)
+document.getElementById('next-btn')?.addEventListener('click', () => setTimeout(wireDemos, 400));
+document.getElementById('prev-btn')?.addEventListener('click', () => setTimeout(wireDemos, 400));
+window.addEventListener('keydown', (e) => {
+  if (['ArrowDown','ArrowUp','PageDown','PageUp',' '].includes(e.key)) {
+    setTimeout(wireDemos, 450);
+  }
+});
+// Re-wire when a library slide becomes visible
+const demoObserver = new IntersectionObserver((entries) => {
+  entries.forEach((e) => {
+    if (e.isIntersecting) setTimeout(wireDemos, 100);
+  });
+}, { threshold: 0.4 });
+document.querySelectorAll('[data-lib]').forEach((s) => demoObserver.observe(s));
+
+// Ajusta para telas pequenas: esconde texto "Roteiro" e kbd
+function adjustMobile() {
+  const isMobile = window.innerWidth < 640;
+  document.querySelectorAll('.hide-mobile').forEach(el => {
+    el.style.display = isMobile ? 'none' : '';
+  });
+}
+adjustMobile();
+window.addEventListener('resize', adjustMobile);
+</script>
+
+
+<!-- Bibliotecas externas para demos ao vivo -->
+<script src="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/recordrtc@5.6.2/RecordRTC.min.js"></script>
+<script>
+  // Depois que as libs externas carregam, reconecta os botões
+  if (typeof wireDemos === 'function') wireDemos();
+</script>
+<script src="https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/vlibras-portal@v7.12.2/app/vlibras-plugin.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.VLibras) {
+      new window.VLibras.Widget('https://vlibras.gov.br/app');
+    }
+  });
+  window.addEventListener('load', function () {
+    if (window.VLibras && !document.querySelector('[vw-access-button]')) {
+      var d = document.createElement('div');
+      d.setAttribute('vw', '');
+      d.className = 'enabled';
+      d.innerHTML = '<div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>';
+      document.body.appendChild(d);
+      new window.VLibras.Widget('https://vlibras.gov.br/app');
+    }
+  });
+</script>
+
+</body>
+</html>
